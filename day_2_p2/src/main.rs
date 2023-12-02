@@ -1,11 +1,16 @@
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct Cubes {
     red: u32,
     green: u32,
     blue: u32,
+}
+impl Cubes {
+    fn power(self: &Self) -> u32 {
+        self.red * self.green * self.blue
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -36,6 +41,23 @@ struct Game {
     rounds: Vec<Round>,
 }
 impl Game {
+    fn get_minimal_cubes(self: &Self) -> Cubes {
+        let mut cubes = Cubes::default();
+
+        for round in self.rounds.iter() {
+            if cubes.red < round.red {
+                cubes.red = round.red
+            }
+            if cubes.green < round.green {
+                cubes.green = round.green
+            }
+            if cubes.blue < round.blue {
+                cubes.blue = round.blue
+            }
+        }
+
+        cubes
+    }
     fn is_possible(self: &Self, cubes: &Cubes) -> bool {
         for round in self.rounds.iter() {
             if !round.is_possible(cubes) {
@@ -54,11 +76,9 @@ struct Play {
 }
 impl Play {
     fn get_minimal_cubes(self: &Self) -> Vec<Cubes> {
-        let mut container: Vec<Game> = vec![];
+        let mut container: Vec<Cubes> = vec![];
         for game in self.games.iter() {
-            if game.is_possible(&self.cubes) {
-                container.push(game.clone());
-            }
+            container.push(game.clone().get_minimal_cubes());
         }
 
         container
@@ -131,13 +151,13 @@ impl Play {
 fn get_ids_sum(file_path: &Path) -> u32 {
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
     let play = Play::from_list_line(contents.lines().collect::<Vec<&str>>());
-    let possible_games = play.get_minimal_cubes();
+    let minimal_cubes = play.get_minimal_cubes();
 
-    println!("{:?}", possible_games);
+    println!("{:?}", minimal_cubes);
 
-    let sum_ids = possible_games.into_iter().map(|game| game.id).sum();
+    let cubes_power = minimal_cubes.iter().map(|cube| cube.power()).sum();
 
-    sum_ids
+    cubes_power
 }
 
 fn main() {
